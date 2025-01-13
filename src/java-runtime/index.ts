@@ -41,7 +41,7 @@ async function initializeJavaRuntimeView(context: vscode.ExtensionContext, webvi
     light: vscode.Uri.file(path.join(context.extensionPath, "caption.light.svg")),
     dark: vscode.Uri.file(path.join(context.extensionPath, "caption.dark.svg"))
   };
-  webviewPanel.webview.html = getHtmlForWebview(context.asAbsolutePath("./out/assets/java-runtime/index.js"));
+  webviewPanel.webview.html = getHtmlForWebview(webviewPanel, context.asAbsolutePath("./out/assets/java-runtime/index.js"));
 
   context.subscriptions.push(webviewPanel.onDidDispose(onDisposeCallback));
   context.subscriptions.push(webviewPanel.webview.onDidReceiveMessage(async (e) => {
@@ -129,6 +129,11 @@ async function initializeJavaRuntimeView(context: vscode.ExtensionContext, webvi
         }
         break;
       }
+      case "onWillRunCommandFromWebview": {
+        const { wrappedArgs } = e;
+        vscode.commands.executeCommand("java.webview.runCommand", wrappedArgs);
+        break;
+      }
       default:
         break;
     }
@@ -154,9 +159,10 @@ async function initializeJavaRuntimeView(context: vscode.ExtensionContext, webvi
   }
 }
 
-function getHtmlForWebview(scriptPath: string) {
+function getHtmlForWebview(webviewPanel: vscode.WebviewPanel, scriptPath: string) {
   const scriptPathOnDisk = vscode.Uri.file(scriptPath);
-  const scriptUri = (scriptPathOnDisk).with({ scheme: "vscode-resource" });
+  const scriptUri = webviewPanel.webview.asWebviewUri(scriptPathOnDisk);
+
   // Use a nonce to whitelist which scripts can be run
   const nonce = getNonce();
 
@@ -172,7 +178,7 @@ function getHtmlForWebview(scriptPath: string) {
     <script nonce="${nonce}" src="${scriptUri}" type="module"></script>
     <div id="content"></div>
   </body>
-  
+
   </html>`;
 }
 
@@ -261,7 +267,7 @@ async function getProjectRuntimesFromPM(): Promise<ProjectRuntimeEntry[]> {
 
       for (const project of projects) {
         const runtimeSpec = await getRuntimeSpec(project.uri);
-        const projectType: ProjectType = await getProjectType(vscode.Uri.parse(project.uri).fsPath);
+        const projectType: ProjectType = getProjectType(vscode.Uri.parse(project.uri).fsPath, runtimeSpec.natureIds);
         ret.push({
           name: project.displayName || project.name,
           rootPath: project.uri,
@@ -287,7 +293,7 @@ async function getProjectRuntimesFromLS(): Promise<ProjectRuntimeEntry[]> {
 
     for (const projectRoot of projects) {
       const runtimeSpec = await getRuntimeSpec(projectRoot);
-      const projectType: ProjectType = await getProjectType(vscode.Uri.parse(projectRoot).fsPath);
+      const projectType: ProjectType = await getProjectType(vscode.Uri.parse(projectRoot).fsPath, runtimeSpec.natureIds);
       ret.push({
         name: getProjectNameFromUri(projectRoot),
         rootPath: projectRoot,
@@ -300,14 +306,17 @@ async function getProjectRuntimesFromLS(): Promise<ProjectRuntimeEntry[]> {
 }
 
 async function getRuntimeSpec(projectRootUri: string) {
+  let natureIds;
   let runtimePath;
   let sourceLevel;
   const javaExt = vscode.extensions.getExtension("redhat.java");
   if (javaExt && javaExt.isActive) {
+    const NATURE_IDS = "org.eclipse.jdt.ls.core.natureIds";
     const SOURCE_LEVEL_KEY = "org.eclipse.jdt.core.compiler.source";
     const VM_INSTALL_PATH = "org.eclipse.jdt.ls.core.vm.location";
     try {
-      const settings: any = await javaExt.exports.getProjectSettings(projectRootUri, [SOURCE_LEVEL_KEY, VM_INSTALL_PATH]);
+      const settings: any = await javaExt.exports.getProjectSettings(projectRootUri, [NATURE_IDS, SOURCE_LEVEL_KEY, VM_INSTALL_PATH]);
+      natureIds = settings[NATURE_IDS];
       runtimePath = settings[VM_INSTALL_PATH];
       sourceLevel = settings[SOURCE_LEVEL_KEY];
     } catch (error) {
@@ -316,6 +325,7 @@ async function getRuntimeSpec(projectRootUri: string) {
   }
 
   return {
+    natureIds,
     runtimePath,
     sourceLevel
   };

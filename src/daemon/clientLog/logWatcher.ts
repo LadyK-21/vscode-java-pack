@@ -5,6 +5,8 @@ import * as path from "path";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { LSDaemon } from "../daemon";
 
+const lombokJarRegex = /lombok-\d+.*\.jar/;
+
 export class ClientLogWatcher {
     private context: vscode.ExtensionContext;
     private javaExtensionRoot: vscode.Uri | undefined;
@@ -17,37 +19,53 @@ export class ClientLogWatcher {
         }
     }
 
-    public async collectStartupInfo() {
-        const logs = await this.getLogs();
+    public async collectInfoFromLog() {
+        let logs = await this.getLogs();
         if (logs) {
-            const info: any = {};
+            logs = logs.reverse();
+            let sessionCount = 0;
+            for (const log of logs) {
+                if (log.message?.startsWith("Use the JDK from")) {
+                    if (++sessionCount > 1) {
+                        // only the lsp traces from last session should be collected.
+                        break;
+                    }
 
-            const jdkLog = logs.find(log => log.message?.startsWith("Use the JDK from"));
-            info.defaultProjectJdk = jdkLog?.message.replace("Use the JDK from '", "").replace("' as the initial default project JDK.", "");
+                    if (Date.parse(log.timestamp) < this.logProcessedTimestamp) {
+                        continue;
+                    }
+                    const info: any = {};
+                    info.defaultProjectJdk = log?.message.replace("Use the JDK from '", "").replace("' as the initial default project JDK.", "");
 
-            const startupLog = logs.find(log => log.message?.startsWith("Starting Java server with:") && log.message.endsWith("jdt_ws") /* limit to standard server */);
-            if (startupLog) {
-                info.xmx = startupLog.message.match(/-Xmx[0-9kmgKMG]+/g)?.[0];
-                info.xms = startupLog.message.match(/-Xms[0-9kmgKMG]+/g)?.[0];
-                info.lombok = startupLog.message.includes("lombok.jar") ? "true" : undefined;
-                info.workspaceType = startupLog.message.match(/-XX:HeapDumpPath=.*(vscodesws)/) ? "vscodesws": "folder";
+                    const startupLog = logs.find(log => log.message?.startsWith("Starting Java server with:") && log.message.endsWith("jdt_ws") /* limit to standard server */);
+                    if (startupLog) {
+                        info.xmx = startupLog.message.match(/-Xmx[0-9kmgKMG]+/g)?.[0];
+                        info.xms = startupLog.message.match(/-Xms[0-9kmgKMG]+/g)?.[0];
+                        if (startupLog.message.includes("lombok.jar")) {
+                            info.lombok = "true"; // using old version of 3rd party lombok extension
+                        } else if (startupLog.message.match(lombokJarRegex)) {
+                            info.lombok = "embedded"; // lombok projects, loading embedded lombok.jar
+                        }
+                        info.workspaceType = startupLog.message.match(/-XX:HeapDumpPath=.*(vscodesws)/) ? "vscodesws": "folder";
+                    }
+
+                    const errorLog = logs.find(log => log.level === "error");
+                    info.error = errorLog ? "true" : undefined;
+
+                    const missingJar = "Error opening zip file or JAR manifest missing"; // lombok especially
+                    if (logs.find(log => log.message?.startsWith(missingJar))) {
+                        info.error = missingJar;
+                    }
+
+                    const crashLog = logs.find(log => log.message?.startsWith("The Language Support for Java server crashed and will restart."));
+                    info.crash = crashLog ? "true" : undefined;
+
+                    sendInfo("", {
+                        name: "client-log-startup-metadata",
+                        ...info
+                    });
+                }
             }
-
-            const errorLog = logs.find(log => log.level === "error");
-            info.error = errorLog ? "true" : undefined;
-
-            const missingJar = "Error opening zip file or JAR manifest missing"; // lombok especially
-            if (logs.find(log => log.message?.startsWith(missingJar))) {
-                info.error = missingJar;
-            }
-
-            const crashLog = logs.find(log => log.message?.startsWith("The Language Support for Java server crashed and will restart."));
-            info.crash = crashLog ? "true" : undefined;
-
-            sendInfo("", {
-                name: "client-log-startup-metadata",
-                ...info
-            });
         }
     }
 
@@ -55,8 +73,7 @@ export class ClientLogWatcher {
         const rawBytes = await this.readLatestLogFile();
         if (rawBytes) {
             const content = rawBytes.toString();
-            const entries = parse(content);
-            return entries.filter(elem => Date.parse(elem["timestamp"]) > this.logProcessedTimestamp);
+            return parse(content);
         } else {
             return undefined;
         }
@@ -83,7 +100,7 @@ export class ClientLogWatcher {
     }
 }
 /**
- * filename: client.log.yyyy-mm-dd.r 
+ * filename: client.log.yyyy-mm-dd.r
  */
 function compare_file(a: string, b: string) {
     const dateA = a.slice(11, 21), dateB = b.slice(11, 21);

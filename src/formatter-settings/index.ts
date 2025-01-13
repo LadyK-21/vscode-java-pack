@@ -56,7 +56,12 @@ export class JavaFormatterSettingsEditorProvider implements vscode.CustomTextEdi
     }
 
     public async showFormatterSettingsEditor(): Promise<void> {
-        if (this.webviewPanel || !await this.checkProfileSettings() || !this.settingsUrl) {
+        if (this.webviewPanel) {
+            this.webviewPanel.reveal();
+            return;
+        }
+
+        if (!await this.checkProfileSettings() || !this.settingsUrl) {
             return;
         }
         const filePath = this.readOnly ? vscode.Uri.parse(this.settingsUrl).with({ scheme: RemoteProfileProvider.scheme }) : vscode.Uri.file(this.profilePath);
@@ -149,7 +154,8 @@ export class JavaFormatterSettingsEditorProvider implements vscode.CustomTextEdi
 
     private getHtmlForWebview(scriptPath: string) {
         const scriptPathOnDisk = vscode.Uri.file(scriptPath);
-        const scriptUri = (scriptPathOnDisk).with({ scheme: "vscode-resource" });
+        const scriptUri = this.webviewPanel?.webview.asWebviewUri(scriptPathOnDisk);
+
         // Use a nonce to whitelist which scripts can be run
         const nonce = getNonce();
         return `<!DOCTYPE html>

@@ -51,7 +51,7 @@ async function initializeOverviewView(context: vscode.ExtensionContext, webviewP
     light: vscode.Uri.file(path.join(context.extensionPath, "caption.light.svg")),
     dark: vscode.Uri.file(path.join(context.extensionPath, "caption.dark.svg"))
   };
-  webviewPanel.webview.html = getHtmlForWebview(context.asAbsolutePath("./out/assets/overview/index.js"));
+  webviewPanel.webview.html = getHtmlForWebview(webviewPanel, context.asAbsolutePath("./out/assets/overview/index.js"));
 
   context.subscriptions.push(webviewPanel.onDidDispose(onDisposeCallback));
 
@@ -108,12 +108,13 @@ export class OverviewViewSerializer implements vscode.WebviewPanelSerializer {
   }
 }
 
-function getHtmlForWebview(scriptPath: string) {
+function getHtmlForWebview(webviewPanel: vscode.WebviewPanel, scriptPath: string) {
   const scriptPathOnDisk = vscode.Uri.file(scriptPath);
-  const scriptUri = (scriptPathOnDisk).with({ scheme: "vscode-resource" });
+  const scriptUri = webviewPanel.webview.asWebviewUri(scriptPathOnDisk);
+
   // Use a nonce to whitelist which scripts can be run
   const nonce = getNonce();
-  
+
   return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -204,7 +205,7 @@ function getHtmlForWebview(scriptPath: string) {
               <div>
                 <a href="command:java.helper.openUrl?%22https%3A%2F%2Fgithub.com%2Fspring-projects%2Fspring-petclinic%22" title="Run PetClinic sample app in VS Code">Spring PetClinic Sample Application</a>
               </div>
-              <div ext="pivotal.vscode-boot-dev-pack" displayName="Spring Boot Extension Pack">
+              <div ext="vmware.vscode-boot-dev-pack" displayName="Spring Boot Extension Pack">
                 <a href="#" title="Install Spring Boot Extension Pack...">Install Spring Boot Extension Pack</a>
               </div>
             </div>
@@ -235,20 +236,6 @@ function getHtmlForWebview(scriptPath: string) {
               </div>
               <div ext="redhat.vscode-quarkus" displayName="Quarkus">
                 <a href="#" title="Install Quarkus extension...">Install Quarkus Extension</a>
-              </div>
-            </div>
-          </div>
-          <div class="row mb-3">
-            <div class="col">
-              <h3 class="font-weight-light">Release Notes</h3>
-              <div>
-                <a href="command:java.showReleaseNotes?%220.7.0%22" title="April 2019 Release Notes">April 2019</a>
-              </div>
-              <div>
-                <a href="command:java.showReleaseNotes?%220.6.0%22" title="February 2019 Release Notes">February 2019</a>
-              </div>
-              <div>
-                <a href="command:java.showReleaseNotes?%220.5.0%22" title="November 2018 Release Notes">November 2018</a>
               </div>
             </div>
           </div>
@@ -311,6 +298,6 @@ function getHtmlForWebview(scriptPath: string) {
       </div>
     </div>
   </body>
-  
+
   </html>`;
 }

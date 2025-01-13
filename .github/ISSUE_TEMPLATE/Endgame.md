@@ -1,8 +1,10 @@
 ---
 name: Endgame
 about: Monthly endgame issue template
-title: <Month> 2022 Endgame
-label: endgame
+title: "<Month> 2023 Endgame"
+labels: endgame
+assignees: jdneo, testforstephen
+
 ---
 
 Legends of status:
@@ -15,26 +17,26 @@ Mark | Description
 
 
 ## Verification items
-#### Extension Pack  
-verifier: 
+#### Extension Pack
+verifier:
 
-#### Project Manager for Java 
-verifier: 
+#### Project Manager for Java
+verifier:
 
 #### Debugger for Java
-verifier: 
+verifier:
 
 #### Maven for Java
-verifier: 
+verifier:
 
 #### Gradle for Java
-verifier: 
+verifier:
 
 #### Test Runner for Java
-verifier: 
+verifier:
 
 #### Spring Boot Dashboard
-verifier: 
+verifier:
 
 ## Verification follow-ups
 - [ ] Extension Pack
@@ -53,5 +55,16 @@ verifier:
 - [ ] Gradle for Java
 - [ ] Test Runner for Java
 - [ ] Spring Boot Dashboard
- 
-## External Contributions 
+
+## External Contributions
+
+## Post-Release Tasks
+Please update dependencies for each project to avoid vulnerabilities. For any reason not to update, create and track corresponding issues in each repo.
+- [ ] Extension Pack @testforstephen
+- [ ] Project Manager for Java @jdneo
+- [ ] Debugger for Java @testforstephen
+- [ ] Maven for Java @testforstephen
+- [ ] Gradle for Java @jdneo
+- [ ] Test Runner for Java @jdneo
+- [ ] LSIF Java indexer @jdneo
+- [ ] Spring Extensions @testforstephen

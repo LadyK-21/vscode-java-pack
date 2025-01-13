@@ -6,7 +6,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
 import { LSDaemon } from "../daemon";
-import { collectErrors, collectErrorsSince, logsForLatestSession, sessionMetadata } from "./logUtils";
+import { collectErrors, collectErrorsSince, containsCorruptedException, isUnsavedWorkspace, logsForLatestSession, sessionMetadata } from "./logUtils";
 import { toElapsed } from "./utils";
 import { redact } from "./whitelist";
 
@@ -53,19 +53,21 @@ export class LogWatcher {
             if (Date.now() - this.logProcessedTimestamp < 1000) { return; } // reduce frequency of log file I/O.
             const logs = await logsForLatestSession(e.fsPath);
             const errors = collectErrorsSince(logs, this.logProcessedTimestamp);
-            const consentToCollectLogs = vscode.workspace.getConfiguration("java").get<boolean>("help.collectErrorLog");
+            const consentToCollectLogs = vscode.workspace.getConfiguration("java").get<boolean>("help.collectErrorLog") ?? false;
             if (errors) {
                 errors.forEach(e => {
-                    consentToCollectLogs ? sendInfo("", {
+                    const {message, tags, hash} = redact(e.message, consentToCollectLogs);
+                    const infoBody: {[key: string]: any} = {
                         name: "jdtls-error",
-                        error: e.message,
-                        stack: e.stack!,
+                        error: message,
+                        tags: tags.join(","),
+                        hash: hash,
                         timestamp: e.timestamp!.toString()
-                    }) : sendInfo("", {
-                        name: "jdtls-error",
-                        error: redact(e.message),
-                        timestamp: e.timestamp!.toString()
-                    });
+                    };
+                    if (consentToCollectLogs && e.stack) {
+                        infoBody.stack = e.stack;
+                    }
+                    sendInfo("", infoBody);
                 })
             }
             this.logProcessedTimestamp = Date.now();
@@ -105,21 +107,41 @@ export class LogWatcher {
         if (this.serverLogUri) {
             const logs = await logsForLatestSession(path.join(this.serverLogUri?.fsPath, ".log"));
             const errors = collectErrors(logs);
-            const consentToCollectLogs = vscode.workspace.getConfiguration("java").get<boolean>("help.collectErrorLog");
+            const consentToCollectLogs = vscode.workspace.getConfiguration("java").get<boolean>("help.collectErrorLog") ?? false;
             if (errors) {
                 errors.forEach(e => {
-                    consentToCollectLogs ? sendInfo("", {
+                    const {message, tags, hash} = redact(e.message, consentToCollectLogs);
+                    const infoBody: {[key: string]: any} = {
                         name: "jdtls-error-in-crashed-session",
-                        error: e.message,
-                        stack: e.stack!,
+                        error: message,
+                        tags: tags.join(","),
+                        hash: hash,
                         timestamp: e.timestamp!.toString()
-                    }) : sendInfo("", {
-                        name: "jdtls-error-in-crashed-session",
-                        error: redact(e.message),
-                        timestamp: e.timestamp!.toString()
-                    });
+                    };
+                    if (consentToCollectLogs && e.stack) {
+                        infoBody.stack = e.stack;
+                    }
+                    sendInfo("", infoBody);
                 })
             }
         }
+    }
+
+    public async checkIfWorkspaceCorrupted(): Promise<boolean> {
+        if (this.serverLogUri) {
+            const logs = await logsForLatestSession(path.join(this.serverLogUri?.fsPath, ".log"));
+            return containsCorruptedException(logs);
+        }
+
+        return false;
+    }
+
+    public async checkIfUnsavedWorkspace(): Promise<boolean> {
+        if (this.serverLogUri) {
+            const logs = await logsForLatestSession(path.join(this.serverLogUri?.fsPath, ".log"));
+            return isUnsavedWorkspace(logs);
+        }
+
+        return false;
     }
 }

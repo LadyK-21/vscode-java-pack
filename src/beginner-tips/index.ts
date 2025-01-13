@@ -4,7 +4,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { sendInfo } from "vscode-extension-telemetry-wrapper";
-import { webviewCmdLinkHandler } from "../utils";
+import { getNonce, webviewCmdLinkHandler } from "../utils";
 
 const WEBVIEW_ID = "java.gettingStarted";
 const WEBVIEW_TITLE = "Tips for Beginners";
@@ -105,9 +105,7 @@ class BeginnerTipsPage {
 
 	private _getHtmlForWebview() {
 		const scriptPathOnDisk = vscode.Uri.file(path.join(this._extensionPath, 'out', "assets", "beginner-tips", "index.js"));
-
-		// const scriptUri = this._panel.webview.asWebviewUri(scriptPathOnDisk);
-		const scriptUri = (scriptPathOnDisk).with({ scheme: "vscode-resource" });
+		const scriptUri = this._panel?.webview.asWebviewUri(scriptPathOnDisk);
 
 		// Use a nonce to whitelist which scripts can be run
 		const nonce = getNonce();
@@ -123,18 +121,9 @@ class BeginnerTipsPage {
 			<body>
 				<noscript>You need to enable JavaScript to run this app.</noscript>
 				<div id="root"></div>
-				
+
 				<script nonce="${nonce}" src="${scriptUri}" type="module"></script>
 			</body>
 			</html>`;
 	}
-}
-
-function getNonce() {
-	let text = "";
-	const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
 }

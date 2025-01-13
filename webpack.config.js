@@ -9,11 +9,10 @@ module.exports = function (env, argv) {
     mode: 'none',
     entry: {
       overview: './src/overview/assets/index.ts',
-      'java-runtime': './src/java-runtime/assets/index.ts',
       'beginner-tips': './src/beginner-tips/assets/index.tsx',
       'ext-guide': './src/ext-guide/assets/index.ts',
       welcome: './src/welcome/assets/index.ts',
-      classpath: './src/classpath/assets/index.tsx',
+      'project-settings': './src/project-settings/assets/index.tsx',
       'formatter-settings': './src/formatter-settings/assets/index.tsx',
       'install-jdk': './src/install-jdk/assets/index.tsx'
     },
@@ -78,7 +77,11 @@ module.exports = function (env, argv) {
     ],
     devtool: 'source-map',
     resolve: {
-      extensions: ['.js', '.ts', '.tsx']
+      extensions: ['.js', '.ts', '.tsx'],
+      // https://github.com/react-dnd/react-dnd/issues/3425#issuecomment-1214554950
+      fallback: {
+        'process/browser': require.resolve('process/browser'),
+      }
     }
   }, {
     name: 'extension',

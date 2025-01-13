@@ -1,5 +1,104 @@
 # Change Log
 
+## 0.29.0
+* enhancement - Add gradle extension into pack by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1374
+* fix - Dialog pops up twice when adding new jdk by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1378
+
+## 0.28.0
+* enhancement - Improve the help center content by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1363
+* enhancement - Add help center into shortcuts by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1365
+* enhancement - Add code action section into walkthrough by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1372
+* fix - Jump to formatter page when it's opened by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1362
+* build - Bump braces from 3.0.2 to 3.0.3 by @dependabot in https://github.com/microsoft/vscode-java-pack/pull/1355
+* build - Update telemetry wrapper by @jdneo in https://github.com/microsoft/vscode-java-pack/pull/1367
+
+## 0.27.0
+### Added
+- Add new project settings page, where users can edit project classpath, compiler settings, Maven settings and more. The page can be accessed by clicking the Java status bar item and selecting `Open Project Settings`. Or trigger the command `Java: Open Project Settings` from the command palette.
+
+### Changed
+- `Java: Configure Java Runtime` command now opens the new project settings page.
+
+### Fixed
+- Avoid duplicated entries displayed in classpath page. [#1314](https://github.com/microsoft/vscode-java-pack/issues/1314)
+
+## 0.26.0
+### Changed
+- Improve the classpath configuration page so that it can update the classpath for Maven and Gradle projects.
+
+## 0.25.15
+### Added
+- Add statistics for the aggregated reliability and performance data of the language server protocol requests on extension exit.
+
+## 0.25.14
+### Changed
+- Optimize statistics on empty results and timeouts for LSP requests.
+
+## 0.25.13
+### Changed
+- Remove marketplace preview flag.
+
+## 0.25.12
+### Added
+- Add Oracle GraalVM to the list of Install New JDK. [#1208](https://github.com/microsoft/vscode-java-pack/issues/1208).
+- Add the error and exception statistics for the Java extension.
+
+## 0.25.11
+### Fixed
+- Fix the statistics of session duration and lsp error responses.
+
+## 0.25.10
+### Fixed
+- Fix vulnerabilities in dependencies.
+
+## 0.25.9
+### Fixed
+Change outdated publisher `pivotal` to `vmware` in related links. [#1161](https://github.com/microsoft/vscode-java-pack/pull/1161)
+
+## 0.25.8
+### Fixed
+- Fix statitics for lombok support and completion performance.
+- Fix vulnerabilities in dependencies.
+
+## 0.25.7
+### Added
+- Add IBM Semeru Runtimes to Other JDKs list. [#1113](https://github.com/microsoft/vscode-java-pack/pull/1092)
+
+## 0.25.6
+### Fixed
+- Webviews are not correctly rendered with VS Code 1.73.0. [#1102](https://github.com/microsoft/vscode-java-pack/issues/1102)
+
+## 0.25.5
+### Fixed
+- Fix vulnerabilities in dependencies.
+
+## 0.25.4
+### Fixed
+- Engineering: Aggregate typical buildship warnings. [#1092](https://github.com/microsoft/vscode-java-pack/pull/1092)
+
+## 0.25.3
+### Fixed
+- Bug: No response on clicking button `install A New JDK`. [#1068](https://github.com/microsoft/vscode-java-pack/pull/1068)
+
+## 0.25.2
+### Fixed
+- Stop spamming the console with useless error messages. [#1063](https://github.com/microsoft/vscode-java-pack/pull/1063)
+
+## 0.25.1
+### Changed
+- Update activation events. [#1036](https://github.com/microsoft/vscode-java-pack/pull/1036)
+
+## 0.25.0
+### Changed
+- Simplify the "clean cache" notification buttons. [#1025](https://github.com/microsoft/vscode-java-pack/pull/1025)
+
+## 0.24.0
+### Added
+- Notify to clean cache if a corrupted workspace cache is detected. [#1011](https://github.com/microsoft/vscode-java-pack/pull/1011)
+
+### Changed
+- Update required tooling JRE to 17. [#1009](https://github.com/microsoft/vscode-java-pack/pull/1009)
+
 ## 0.23.0
 ### Changed
 - Polish "Explore more Java resources" step in walkthrough. [#1002](https://github.com/microsoft/vscode-java-pack/pull/1002)
@@ -91,7 +190,7 @@
 - Rename command `Java: Welcome` to `Java: Help Center`.
 
 ## 0.18.0
-### Added 
+### Added
 - Provide code action to configure classpath. [#684](https://github.com/microsoft/vscode-java-pack/pull/684)
 
 ### Changed
